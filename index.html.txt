@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EV Exec • Premium Electric Airport Transfers</title>
+    <script src="https://js.stripe.com/v3/"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --navy: #07192E;
+            --navy-mid: #0E2A47;
+            --gold: #C9A84C;
+            --gold-light: #E2C47A;
+            --gold-pale: rgba(201,168,76,0.12);
+            --cream: #F9F6F0;
+            --text: #1a1a2e;
+            --muted: #6B7A8D;
+            --border: #E3E8EF;
+            --white: #ffffff;
+            --success: #1A7A4A;
+            --error: #C0392B;
+        }
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--text); line-height: 1.6; overflow-x: hidden; }
+
+        /* HEADER */
+        header { position: fixed; top: 0; left: 0; right: 0; z-index: 900; background: rgba(7,25,46,0.97); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(201,168,76,0.2); padding: 0 2rem; height: 70px; display: flex; align-items: center; justify-content: space-between; }
+        .logo { font-family: 'Cormorant Garamond', serif; font-size: 1.7rem; font-weight: 700; color: white; text-decoration: none; letter-spacing: 0.04em; }
+        .logo span { color: var(--gold); }
+        nav { display: flex; gap: 2.5rem; }
+        nav a { color: rgba(255,255,255,0.75); text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: color 0.2s; }
+        nav a:hover { color: var(--gold-light); }
+
+        /* HERO */
+        .hero { min-height: 100vh; background: linear-gradient(165deg, rgba(7,25,46,0.96) 0%, rgba(14,42,71,0.85) 60%, rgba(7,25,46,0.98) 100%), url('https://images.unsplash.com/photo-1619767886558-efdc259cde1a?w=1800&q=80') center/cover no-repeat; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 120px 2rem 6rem; position: relative; }
+        .hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 80% 60% at 50% 40%, rgba(201,168,76,0.08) 0%, transparent 70%); pointer-events: none; }
+        .hero-badge { display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(201,168,76,0.15); border: 1px solid rgba(201,168,76,0.35); color: var(--gold-light); padding: 0.4rem 1.2rem; border-radius: 100px; font-size: 0.82rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 1.8rem; animation: fadeUp 0.6s ease both; }
+        .hero h1 { font-family: 'Cormorant Garamond', serif; font-size: clamp(2.8rem, 6vw, 5rem); font-weight: 700; color: white; line-height: 1.08; max-width: 800px; margin-bottom: 1.2rem; animation: fadeUp 0.6s 0.1s ease both; }
+        .hero h1 em { font-style: italic; color: var(--gold-light); }
+        .hero-sub { font-size: 1.15rem; color: rgba(255,255,255,0.65); max-width: 520px; margin: 0 auto 2.5rem; font-weight: 300; animation: fadeUp 0.6s 0.2s ease both; }
+        .hero-stats { display: flex; gap: 3rem; animation: fadeUp 0.6s 0.3s ease both; }
+        .stat { text-align: center; }
+        .stat-num { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 700; color: var(--gold-light); line-height: 1; }
+        .stat-label { font-size: 0.78rem; color: rgba(255,255,255,0.5); letter-spacing: 0.06em; text-transform: uppercase; margin-top: 0.25rem; }
+        .scroll-hint { position: absolute; bottom: 2.5rem; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 0.4rem; color: rgba(255,255,255,0.35); font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; animation: fadeUp 0.6s 0.5s ease both; }
+        .scroll-arrow { width: 20px; height: 20px; border-right: 2px solid rgba(201,168,76,0.4); border-bottom: 2px solid rgba(201,168,76,0.4); transform: rotate(45deg); animation: bounce 1.5s infinite; }
+
+        /* BOOKING */
+        .booking-section { background: var(--cream); padding: 5rem 2rem; }
+        .section-label { text-align: center; font-size: 0.78rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.6rem; }
+        .section-title { font-family: 'Cormorant Garamond', serif; font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; color: var(--navy); text-align: center; margin-bottom: 3rem; line-height: 1.1; }
+        .booking-wrapper { max-width: 860px; margin: 0 auto; }
+
+        /* Step Progress */
+        .step-progress { display: flex; align-items: center; margin-bottom: 3rem; padding: 0 1rem; }
+        .step-item { display: flex; flex-direction: column; align-items: center; gap: 0.4rem; flex: 1; position: relative; }
+        .step-item::after { content: ''; position: absolute; top: 18px; left: 60%; right: -40%; height: 2px; background: var(--border); transition: background 0.4s; }
+        .step-item:last-child::after { display: none; }
+        .step-item.completed::after { background: var(--gold); }
+        .step-dot { width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--border); background: white; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 600; color: var(--muted); transition: all 0.3s; position: relative; z-index: 1; }
+        .step-item.active .step-dot { border-color: var(--gold); background: var(--gold); color: white; }
+        .step-item.completed .step-dot { border-color: var(--gold); background: var(--gold); color: white; }
+        .step-label { font-size: 0.72rem; font-weight: 500; color: var(--muted); letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; }
+        .step-item.active .step-label, .step-item.completed .step-label { color: var(--navy); }
+
+        /* Step Panels */
+        .step-panel { display: none; animation: fadeUp 0.35s ease; }
+        .step-panel.active { display: block; }
+
+        /* Cards */
+        .form-card { background: white; border-radius: 20px; box-shadow: 0 4px 40px rgba(7,25,46,0.08); padding: 2.5rem; margin-bottom: 1.5rem; }
+        .card-title { font-family: 'Cormorant Garamond', serif; font-size: 1.6rem; font-weight: 700; color: var(--navy); margin-bottom: 0.4rem; }
+        .card-subtitle { font-size: 0.9rem; color: var(--muted); margin-bottom: 2rem; }
+
+        /* Trip Toggle */
+        .trip-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem; }
+        .trip-btn { padding: 1.1rem; border: 2px solid var(--border); border-radius: 12px; background: white; cursor: pointer; text-align: center; transition: all 0.25s; font-family: 'DM Sans', sans-serif; }
+        .trip-btn:hover { border-color: var(--gold-light); }
+        .trip-btn.active { border-color: var(--gold); background: var(--gold-pale); }
+        .trip-btn .trip-icon { font-size: 1.5rem; margin-bottom: 0.3rem; }
+        .trip-btn .trip-name { font-weight: 600; color: var(--navy); font-size: 0.95rem; }
+        .trip-btn .trip-desc { font-size: 0.78rem; color: var(--muted); margin-top: 0.15rem; }
+
+        /* Form elements */
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
+        @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } nav { display: none; } .hero-stats { gap: 1.5rem; } }
+        .form-group { margin-bottom: 1.2rem; }
+        .form-group:last-child { margin-bottom: 0; }
+        label { display: block; font-size: 0.82rem; font-weight: 600; color: var(--navy); letter-spacing: 0.03em; margin-bottom: 0.5rem; text-transform: uppercase; }
+        .input-wrap { position: relative; }
+        .input-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 1rem; pointer-events: none; color: var(--muted); }
+        input, select, textarea { width: 100%; padding: 12px 14px; border: 2px solid var(--border); border-radius: 10px; font-size: 0.95rem; font-family: 'DM Sans', sans-serif; background: white; color: var(--text); transition: border-color 0.2s, box-shadow 0.2s; -webkit-appearance: none; }
+        input.has-icon, select.has-icon { padding-left: 40px; }
+        input:focus, select:focus, textarea:focus { border-color: var(--gold); outline: none; box-shadow: 0 0 0 3px rgba(201,168,76,0.15); }
+        input.error, select.error { border-color: var(--error); }
+        .field-error { font-size: 0.78rem; color: var(--error); margin-top: 0.35rem; display: none; }
+        .field-error.visible { display: block; }
+
+        /* Airport Cards */
+        .airport-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.8rem; margin-top: 0.5rem; }
+        .airport-card { border: 2px solid var(--border); border-radius: 12px; padding: 1rem 0.8rem; cursor: pointer; text-align: center; background: white; transition: all 0.25s; position: relative; }
+        .airport-card:hover { border-color: var(--gold-light); transform: translateY(-2px); }
+        .airport-card.selected { border-color: var(--gold); background: var(--gold-pale); box-shadow: 0 4px 16px rgba(201,168,76,0.15); }
+        .airport-code { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; font-weight: 700; color: var(--navy); }
+        .airport-name { font-size: 0.72rem; color: var(--muted); margin-top: 0.2rem; line-height: 1.3; }
+        .airport-price { font-size: 0.85rem; font-weight: 600; color: var(--gold); margin-top: 0.4rem; }
+        .airport-check { position: absolute; top: 6px; right: 8px; font-size: 0.8rem; opacity: 0; transition: opacity 0.2s; }
+        .airport-card.selected .airport-check { opacity: 1; }
+
+        /* Autocomplete */
+        .autocomplete-wrap { position: relative; }
+        .autocomplete-list { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: white; border: 2px solid var(--gold); border-radius: 10px; box-shadow: 0 8px 30px rgba(7,25,46,0.12); z-index: 100; max-height: 200px; overflow-y: auto; display: none; }
+        .autocomplete-list.open { display: block; }
+        .autocomplete-item { padding: 10px 14px; cursor: pointer; font-size: 0.9rem; transition: background 0.15s; }
+        .autocomplete-item:hover { background: var(--gold-pale); }
+
+        /* Pax */
+        .pax-selector { display: flex; align-items: center; gap: 1rem; border: 2px solid var(--border); border-radius: 10px; padding: 10px 14px; background: white; width: fit-content; }
+        .pax-btn { width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--border); background: white; cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; transition: all 0.2s; color: var(--navy); }
+        .pax-btn:hover { border-color: var(--gold); background: var(--gold-pale); }
+        .pax-count { font-size: 1.2rem; font-weight: 600; color: var(--navy); min-width: 24px; text-align: center; }
+
+        /* Summary */
+        .summary-card { background: var(--navy); border-radius: 16px; padding: 2rem; color: white; margin-bottom: 1.5rem; }
+        .summary-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 0.7rem 0; border-bottom: 1px solid rgba(255,255,255,0.1); gap: 1rem; }
+        .summary-row:last-child { border-bottom: none; padding-bottom: 0; }
+        .summary-label { font-size: 0.8rem; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 500; }
+        .summary-val { font-size: 0.95rem; font-weight: 600; color: white; text-align: right; }
+        .summary-total-row { display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid rgba(201,168,76,0.3); }
+        .summary-total-label { font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; font-weight: 600; color: rgba(255,255,255,0.7); }
+        .summary-total-price { font-family: 'Cormorant Garamond', serif; font-size: 2.6rem; font-weight: 700; color: var(--gold-light); line-height: 1; }
+        .features-list { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1.2rem; }
+        .feature-tag { display: inline-flex; align-items: center; gap: 0.35rem; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); color: rgba(255,255,255,0.7); padding: 0.3rem 0.8rem; border-radius: 100px; font-size: 0.78rem; }
+
+        /* Trust */
+        .trust-row { display: flex; align-items: center; gap: 1.5rem; padding: 1.2rem 1.5rem; background: white; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 1.5rem; flex-wrap: wrap; }
+        .trust-item { display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; color: var(--muted); }
+
+        /* Prices */
+        .prices-ref { background: white; border: 1px solid var(--border); border-radius: 16px; padding: 2rem; margin-bottom: 2rem; }
+        .prices-title { font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; font-weight: 600; color: var(--navy); margin-bottom: 1.2rem; }
+        table { width: 100%; border-collapse: collapse; }
+        th { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); padding: 0.5rem 0.8rem; text-align: left; border-bottom: 2px solid var(--border); }
+        td { padding: 0.8rem 0.8rem; font-size: 0.9rem; color: var(--text); border-bottom: 1px solid var(--border); }
+        tr:last-child td { border-bottom: none; }
+        tr.highlighted td { background: var(--gold-pale); font-weight: 600; color: var(--navy); }
+        td.price { color: var(--gold); font-weight: 700; }
+
+        /* Contact */
+        .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
+        @media (max-width: 600px) { .contact-grid { grid-template-columns: 1fr; } }
+
+        /* Stripe card element */
+        .card-element-wrap { border: 2px solid var(--border); border-radius: 10px; padding: 14px 16px; background: white; transition: border-color 0.2s; min-height: 46px; }
+        .card-element-wrap.focused { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,168,76,0.15); }
+        .payment-logos { display: flex; gap: 0.6rem; align-items: center; margin-top: 1rem; }
+        .payment-logo { background: #f0f0f0; border-radius: 6px; padding: 4px 8px; font-size: 0.7rem; font-weight: 700; color: #555; }
+
+        /* Buttons */
+        .btn-group { display: flex; gap: 1rem; align-items: center; }
+        .btn-primary { flex: 1; background: var(--gold); color: var(--navy); border: none; padding: 15px 28px; font-size: 0.98rem; font-weight: 600; border-radius: 12px; cursor: pointer; transition: all 0.25s; font-family: 'DM Sans', sans-serif; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+        .btn-primary:hover { background: var(--gold-light); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(201,168,76,0.35); }
+        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
+        .btn-secondary { background: white; color: var(--navy); border: 2px solid var(--border); padding: 13px 24px; font-size: 0.95rem; font-weight: 500; border-radius: 12px; cursor: pointer; transition: all 0.2s; font-family: 'DM Sans', sans-serif; }
+        .btn-secondary:hover { border-color: var(--navy); }
+        .btn-navy { background: var(--navy); color: white; border: none; padding: 15px 28px; font-size: 0.98rem; font-weight: 600; border-radius: 12px; cursor: pointer; transition: all 0.25s; font-family: 'DM Sans', sans-serif; width: 100%; }
+        .btn-navy:hover { background: var(--navy-mid); transform: translateY(-1px); }
+
+        /* Confirmation */
+        .confirmation { display: none; text-align: center; padding: 3rem 2rem; }
+        .confirmation.visible { display: block; }
+        .conf-circle { width: 90px; height: 90px; background: linear-gradient(135deg, var(--gold), var(--gold-light)); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; margin: 0 auto 2rem; box-shadow: 0 8px 30px rgba(201,168,76,0.3); animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        .conf-ref { font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; color: var(--muted); margin-bottom: 0.5rem; }
+        .conf-code { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 700; color: var(--navy); letter-spacing: 0.08em; margin-bottom: 2rem; }
+        .conf-details { background: var(--navy); border-radius: 16px; padding: 1.8rem; text-align: left; margin-top: 2rem; }
+
+        /* Why */
+        .why-section { background: var(--navy); padding: 6rem 2rem; }
+        .why-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem; max-width: 900px; margin: 0 auto; }
+        .why-item { text-align: center; padding: 2rem 1.5rem; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; transition: all 0.3s; }
+        .why-item:hover { background: rgba(201,168,76,0.08); border-color: rgba(201,168,76,0.2); transform: translateY(-4px); }
+        .why-icon { font-size: 2rem; margin-bottom: 1rem; }
+        .why-title { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; font-weight: 600; color: var(--gold-light); margin-bottom: 0.5rem; }
+        .why-desc { font-size: 0.88rem; color: rgba(255,255,255,0.5); line-height: 1.6; }
+
+        /* Footer */
+        footer { background: #040e1a; color: white; padding: 3rem 2rem 2rem; text-align: center; }
+        .footer-logo { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .footer-logo span { color: var(--gold); }
+        .footer-links { display: flex; justify-content: center; gap: 2rem; margin-bottom: 2rem; flex-wrap: wrap; }
+        .footer-links a { color: rgba(255,255,255,0.45); text-decoration: none; font-size: 0.85rem; transition: color 0.2s; }
+        .footer-links a:hover { color: var(--gold-light); }
+        .footer-copy { font-size: 0.8rem; color: rgba(255,255,255,0.25); padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.06); }
+
+        /* Spinner */
+        .spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid rgba(7,25,46,0.3); border-radius: 50%; border-top-color: var(--navy); animation: spin 0.7s linear infinite; }
+
+        /* Stripe error */
+        .stripe-error { color: var(--error); font-size: 0.82rem; margin-top: 0.5rem; display: none; }
+        .stripe-error.visible { display: block; }
+
+        /* Toast */
+        .toast { position: fixed; bottom: 2rem; right: 2rem; background: var(--navy); color: white; padding: 1rem 1.5rem; border-radius: 12px; box-shadow: 0 8px 30px rgba(7,25,46,0.3); border-left: 4px solid var(--gold); z-index: 9999; font-size: 0.9rem; font-weight: 500; transform: translateX(200%); transition: transform 0.35s cubic-bezier(0.34, 1.2, 0.64, 1); max-width: 320px; }
+        .toast.visible { transform: translateX(0); }
+        .toast-title { font-weight: 700; margin-bottom: 0.2rem; }
+        .toast-msg { color: rgba(255,255,255,0.7); font-size: 0.82rem; }
+
+        /* Animations */
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes bounce { 0%, 100% { transform: rotate(45deg) translateY(0); } 50% { transform: rotate(45deg) translateY(5px); } }
+        @keyframes popIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<header>
+    <a href="#" class="logo">EV EXEC <span>⚡</span></a>
+    <nav>
+        <a href="#">Home</a>
+        <a href="#booking">Book</a>
+        <a href="#why">Fleet</a>
+        <a href="mailto:book@evexec.co.uk">Contact</a>
+    </nav>
+</header>
+
+<section class="hero">
+    <div class="hero-badge">⚡ 100% Electric · Tesla Model Y</div>
+    <h1>Arrive in <em>Style,</em><br>Travel with Purpose</h1>
+    <p class="hero-sub">Premium electric airport transfers from Blackpool & the Fylde Coast — silent, sustainable, superior.</p>
+    <div class="hero-stats">
+        <div class="stat"><div class="stat-num">5★</div><div class="stat-label">Rated Service</div></div>
+        <div class="stat"><div class="stat-num">5</div><div class="stat-label">Airports</div></div>
+        <div class="stat"><div class="stat-num">0</div><div class="stat-label">Emissions</div></div>
+        <div class="stat"><div class="stat-num">24/7</div><div class="stat-label">Available</div></div>
+    </div>
+    <div class="scroll-hint">
+        <span>Book Now</span>
+        <div class="scroll-arrow"></div>
+    </div>
+</section>
+
+<section class="booking-section" id="booking">
+    <p class="section-label">Reserve Your Journey</p>
+    <h2 class="section-title">Book Your Transfer</h2>
+
+    <div class="booking-wrapper">
+        <!-- Step Progress -->
+        <div class="step-progress" id="step-progress">
+            <div class="step-item active" id="step-nav-1"><div class="step-dot">1</div><span class="step-label">Journey</span></div>
+            <div class="step-item" id="step-nav-2"><div class="step-dot">2</div><span class="step-label">Details</span></div>
+            <div class="step-item" id="step-nav-3"><div class="step-dot">3</div><span class="step-label">Review</span></div>
+            <div class="step-item" id="step-nav-4"><div class="step-dot">4</div><span class="step-label">Payment</span></div>
+        </div>
+
+        <!-- STEP 1 -->
+        <div class="step-panel active" id="step-1">
+            <div class="form-card">
+                <div class="card-title">Plan Your Journey</div>
+                <div class="card-subtitle">Select trip type, airport, and travel date.</div>
+
+                <label style="margin-bottom:0.7rem;">Trip Type</label>
+                <div class="trip-toggle">
+                    <button class="trip-btn active" id="btn-oneway" onclick="setTripType('oneway')" type="button">
+                        <div class="trip-icon">→</div>
+                        <div class="trip-name">One Way</div>
+                        <div class="trip-desc">Single trip to airport</div>
+                    </button>
+                    <button class="trip-btn" id="btn-return" onclick="setTripType('return')" type="button">
+                        <div class="trip-icon">⇄</div>
+                        <div class="trip-name">Return</div>
+                        <div class="trip-desc">There & back</div>
+                    </button>
+                </div>
+
+                <div class="form-group">
+                    <label>Pickup Location</label>
+                    <div class="autocomplete-wrap">
+                        <div class="input-wrap">
+                            <span class="input-icon">📍</span>
+                            <input type="text" id="pickup" class="has-icon" placeholder="Town, street or postcode..." autocomplete="off"
+                                oninput="handlePickupInput(this.value)"
+                                onblur="setTimeout(()=>closeAutocomplete(),150)">
+                        </div>
+                        <div class="autocomplete-list" id="pickup-suggestions"></div>
+                    </div>
+                    <div class="field-error" id="err-pickup">Please enter a pickup location.</div>
+                </div>
+
+                <div class="form-group">
+                    <label>Destination Airport</label>
+                    <div class="airport-grid">
+                        <div class="airport-card selected" onclick="selectAirport('MAN')"><span class="airport-check">✓</span><div class="airport-code">MAN</div><div class="airport-name">Manchester</div><div class="airport-price">from £90</div></div>
+                        <div class="airport-card" onclick="selectAirport('LPL')"><span class="airport-check">✓</span><div class="airport-code">LPL</div><div class="airport-name">Liverpool</div><div class="airport-price">from £95</div></div>
+                        <div class="airport-card" onclick="selectAirport('LBA')"><span class="airport-check">✓</span><div class="airport-code">LBA</div><div class="airport-name">Leeds Bradford</div><div class="airport-price">from £135</div></div>
+                        <div class="airport-card" onclick="selectAirport('BHX')"><span class="airport-check">✓</span><div class="airport-code">BHX</div><div class="airport-name">Birmingham</div><div class="airport-price">from £215</div></div>
+                        <div class="airport-card" onclick="selectAirport('NCL')"><span class="airport-check">✓</span><div class="airport-code">NCL</div><div class="airport-name">Newcastle</div><div class="airport-price">from £250</div></div>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Pickup Date</label>
+                        <div class="input-wrap"><span class="input-icon">📅</span><input type="date" id="travel-date" class="has-icon" required></div>
+                        <div class="field-error" id="err-date">Please select a date.</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Pickup Time</label>
+                        <div class="input-wrap"><span class="input-icon">🕐</span><input type="time" id="travel-time" class="has-icon" required></div>
+                        <div class="field-error" id="err-time">Please select a time.</div>
+                    </div>
+                </div>
+
+                <div id="return-date-section" style="display:none;">
+                    <div class="form-grid">
+                        <div class="form-group"><label>Return Date</label><div class="input-wrap"><span class="input-icon">📅</span><input type="date" id="return-date" class="has-icon"></div></div>
+                        <div class="form-group"><label>Return Time (approx)</label><div class="input-wrap"><span class="input-icon">🕐</span><input type="time" id="return-time" class="has-icon"></div></div>
+                    </div>
+                    <div class="form-group"><label>Return Flight Number</label><div class="input-wrap"><span class="input-icon">✈️</span><input type="text" id="return-flight" class="has-icon" placeholder="e.g. BA456 — we track your landing"></div></div>
+                </div>
+
+                <div class="form-group">
+                    <label>Passengers</label>
+                    <div class="pax-selector">
+                        <button class="pax-btn" onclick="changePax(-1)" type="button">−</button>
+                        <span class="pax-count" id="pax-count">2</span>
+                        <button class="pax-btn" onclick="changePax(1)" type="button">+</button>
+                        <span style="font-size:0.85rem;color:var(--muted);margin-left:0.5rem;">Max 4 · Tesla Model Y</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="prices-ref">
+                <div class="prices-title">Fixed Price Guide (up to 4 passengers)</div>
+                <table>
+                    <thead><tr><th>Airport</th><th>One Way</th><th>Return</th></tr></thead>
+                    <tbody>
+                        <tr id="row-MAN" class="highlighted"><td>Manchester</td><td class="price">£90</td><td class="price">£180</td></tr>
+                        <tr id="row-LPL"><td>Liverpool</td><td class="price">£95</td><td class="price">£190</td></tr>
+                        <tr id="row-LBA"><td>Leeds Bradford</td><td class="price">£135</td><td class="price">£270</td></tr>
+                        <tr id="row-BHX"><td>Birmingham</td><td class="price">£215</td><td class="price">£430</td></tr>
+                        <tr id="row-NCL"><td>Newcastle</td><td class="price">£250</td><td class="price">£500</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="btn-group">
+                <button class="btn-primary" onclick="goToStep(2)">Continue to Passenger Details →</button>
+            </div>
+        </div>
+
+        <!-- STEP 2 -->
+        <div class="step-panel" id="step-2">
+            <div class="form-card">
+                <div class="card-title">Passenger Details</div>
+                <div class="card-subtitle">Your contact information and any requirements.</div>
+
+                <div class="contact-grid">
+                    <div class="form-group"><label>First Name</label><input type="text" id="first-name" placeholder="John"><div class="field-error" id="err-firstname">Required.</div></div>
+                    <div class="form-group"><label>Last Name</label><input type="text" id="last-name" placeholder="Smith"><div class="field-error" id="err-lastname">Required.</div></div>
+                </div>
+                <div class="contact-grid">
+                    <div class="form-group"><label>Email Address</label><div class="input-wrap"><span class="input-icon">✉️</span><input type="email" id="email" class="has-icon" placeholder="john@example.com"></div><div class="field-error" id="err-email">Please enter a valid email.</div></div>
+                    <div class="form-group"><label>Phone Number</label><div class="input-wrap"><span class="input-icon">📞</span><input type="tel" id="phone" class="has-icon" placeholder="+44 7xxx xxxxxx"></div><div class="field-error" id="err-phone">Required.</div></div>
+                </div>
+                <div class="form-group">
+                    <label>Outbound Flight Number <span style="color:var(--muted);font-weight:400;text-transform:none;font-size:0.8rem;">(optional — enables real-time tracking)</span></label>
+                    <div class="input-wrap"><span class="input-icon">✈️</span><input type="text" id="flight-number" class="has-icon" placeholder="e.g. EZY123, BA456"></div>
+                </div>
+                <div class="form-group">
+                    <label>Luggage</label>
+                    <div class="form-grid">
+                        <div><label style="text-transform:none;font-weight:400;color:var(--muted);font-size:0.82rem;">Checked bags</label><select id="checked-bags"><option value="0">0 bags</option><option value="1">1 bag</option><option value="2" selected>2 bags</option><option value="3">3 bags</option><option value="4">4 bags</option></select></div>
+                        <div><label style="text-transform:none;font-weight:400;color:var(--muted);font-size:0.82rem;">Hand luggage</label><select id="hand-bags"><option value="0">0</option><option value="1">1</option><option value="2" selected>2</option><option value="3">3</option></select></div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Extras</label>
+                    <div style="display:flex;flex-wrap:wrap;gap:0.6rem;margin-top:0.3rem;">
+                        <label style="text-transform:none;font-weight:400;font-size:0.85rem;color:var(--text);display:flex;align-items:center;gap:0.4rem;cursor:pointer;"><input type="checkbox" id="extra-childseat" style="width:auto;padding:0;border:none;"> Child seat</label>
+                        <label style="text-transform:none;font-weight:400;font-size:0.85rem;color:var(--text);display:flex;align-items:center;gap:0.4rem;cursor:pointer;"><input type="checkbox" id="extra-boosterseat" style="width:auto;padding:0;border:none;"> Booster seat</label>
+                        <label style="text-transform:none;font-weight:400;font-size:0.85rem;color:var(--text);display:flex;align-items:center;gap:0.4rem;cursor:pointer;"><input type="checkbox" id="extra-wifi" style="width:auto;padding:0;border:none;"> In-car WiFi</label>
+                        <label style="text-transform:none;font-weight:400;font-size:0.85rem;color:var(--text);display:flex;align-items:center;gap:0.4rem;cursor:pointer;"><input type="checkbox" id="extra-refreshments" style="width:auto;padding:0;border:none;"> Refreshments</label>
+                    </div>
+                </div>
+                <div class="form-group"><label>Special Requests</label><textarea id="special-requests" rows="3" placeholder="Accessibility needs, pickup instructions, anything else..."></textarea></div>
+            </div>
+            <div class="btn-group">
+                <button class="btn-secondary" onclick="goToStep(1)">← Back</button>
+                <button class="btn-primary" onclick="goToStep(3)">Review Booking →</button>
+            </div>
+        </div>
+
+        <!-- STEP 3 -->
+        <div class="step-panel" id="step-3">
+            <div class="summary-card" id="booking-summary"></div>
+            <div class="trust-row">
+                <div class="trust-item"><span>🔒</span><span>Secure Stripe payment</span></div>
+                <div class="trust-item"><span>✉️</span><span>Instant email confirmation</span></div>
+                <div class="trust-item"><span>✈️</span><span>Real-time flight tracking</span></div>
+                <div class="trust-item"><span>↩️</span><span>Free cancellation 24h+</span></div>
+            </div>
+            <div class="form-card">
+                <div class="card-title">Notes for Driver</div>
+                <div class="card-subtitle">Any last instructions before payment.</div>
+                <div class="form-group" style="margin-bottom:0;"><textarea id="driver-notes" rows="2" placeholder="e.g. 'Call on arrival', preferred music, temperature..."></textarea></div>
+            </div>
+            <div class="btn-group">
+                <button class="btn-secondary" onclick="goToStep(2)">← Back</button>
+                <button class="btn-primary" onclick="goToStep(4)">Proceed to Payment →</button>
+            </div>
+        </div>
+
+        <!-- STEP 4 -->
+        <div class="step-panel" id="step-4">
+            <div class="form-card">
+                <div class="card-title">Secure Payment</div>
+                <div class="card-subtitle">Your booking is confirmed the moment payment succeeds.</div>
+
+                <div id="payment-mini-summary" style="background:var(--gold-pale);border:1px solid rgba(201,168,76,0.3);border-radius:10px;padding:1rem 1.2rem;margin-bottom:1.8rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;"></div>
+
+                <div class="form-group">
+                    <label>Card Details</label>
+                    <div class="card-element-wrap" id="card-element"></div>
+                    <div class="stripe-error" id="stripe-error"></div>
+                </div>
+
+                <div class="form-group">
+                    <label>Name on Card</label>
+                    <input type="text" id="cardholder-name" placeholder="John Smith">
+                    <div class="field-error" id="err-cardname">Please enter the name on your card.</div>
+                </div>
+
+                <div class="payment-logos">
+                    <div class="payment-logo">VISA</div>
+                    <div class="payment-logo">MC</div>
+                    <div class="payment-logo">AMEX</div>
+                    <span style="font-size:0.75rem;color:var(--muted);margin-left:0.3rem;">🔒 256-bit SSL · Powered by Stripe</span>
+                </div>
+            </div>
+
+            <div class="btn-group">
+                <button class="btn-secondary" onclick="goToStep(3)">← Back</button>
+                <button class="btn-primary" id="pay-btn" onclick="processPayment()">
+                    <span id="pay-btn-text">Pay Now · <span id="pay-amount">£90</span></span>
+                </button>
+            </div>
+            <p style="text-align:center;font-size:0.78rem;color:var(--muted);margin-top:1rem;">Free cancellation up to 24 hours before travel. By paying you agree to our terms.</p>
+        </div>
+
+        <!-- Confirmation -->
+        <div class="confirmation" id="confirmation">
+            <div class="conf-circle">✓</div>
+            <p class="conf-ref">Booking Reference</p>
+            <div class="conf-code" id="conf-ref-code">EVX-000000</div>
+            <p style="color:var(--muted);max-width:440px;margin:0 auto;font-size:0.95rem;">
+                Your booking is confirmed! A full confirmation has been sent to your email with your driver details.
+            </p>
+            <div class="conf-details" id="conf-details"></div>
+            <div style="margin-top:2rem;display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
+                <button class="btn-navy" style="width:auto;padding:12px 24px;" onclick="downloadConfirmation()">⬇ Download Confirmation</button>
+                <button class="btn-secondary" onclick="resetBooking()">Book Another Journey</button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="why-section" id="why">
+    <p class="section-label" style="color:rgba(201,168,76,0.8);">The EV Exec Difference</p>
+    <h2 class="section-title" style="color:white;margin-bottom:3rem;">Why Choose EV Exec?</h2>
+    <div class="why-grid">
+        <div class="why-item"><div class="why-icon">⚡</div><div class="why-title">100% Electric</div><div class="why-desc">Tesla Model Y — silent, smooth, and zero emissions. Arrive relaxed.</div></div>
+        <div class="why-item"><div class="why-icon">✈️</div><div class="why-title">Flight Tracking</div><div class="why-desc">Real-time monitoring. We adjust if your flight is delayed — no extra cost.</div></div>
+        <div class="why-item"><div class="why-icon">🔒</div><div class="why-title">Fixed Prices</div><div class="why-desc">No surge pricing, no surprises. One fair price, guaranteed every time.</div></div>
+        <div class="why-item"><div class="why-icon">🌐</div><div class="why-title">Premium Comfort</div><div class="why-desc">WiFi, phone charging, refreshments, and personalised service onboard.</div></div>
+    </div>
+</section>
+
+<footer>
+    <div class="footer-logo">EV EXEC <span>⚡</span></div>
+    <div style="color:rgba(255,255,255,0.4);font-size:0.88rem;margin-bottom:1.5rem;">Blackpool · Fylde Coast · Premium Electric Transfers</div>
+    <div class="footer-links">
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms & Conditions</a>
+        <a href="#">Cancellation Policy</a>
+        <a href="mailto:book@evexec.co.uk">book@evexec.co.uk</a>
+    </div>
+    <div class="footer-copy">© 2026 EV Exec. All rights reserved. | <a href="https://www.evexec.co.uk" style="color:var(--gold);text-decoration:none;">www.evexec.co.uk</a></div>
+</footer>
+
+<div class="toast" id="toast">
+    <div class="toast-title" id="toast-title"></div>
+    <div class="toast-msg" id="toast-msg"></div>
+</div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────────
+// IMPORTANT: Replace this URL with your Vercel deployment URL after deploying
+const API_BASE = 'https://YOUR-PROJECT.vercel.app';
+
+const STRIPE_PK = 'pk_test_51TSSRc7hs1cOd0AwU6EN0dKuevtZcWulxyNo6F8OY4Ib162cIapvPTHsalp9Zbgv8af9PMXUz43k7pLXbaWMYVHI00oFLevDMT';
+
+const PRICES = {
+    MAN: { oneway: 90,  return: 180 },
+    LPL: { oneway: 95,  return: 190 },
+    LBA: { oneway: 135, return: 270 },
+    BHX: { oneway: 215, return: 430 },
+    NCL: { oneway: 250, return: 500 }
+};
+
+const AIRPORT_NAMES = {
+    MAN: 'Manchester Airport', LPL: 'Liverpool Airport',
+    LBA: 'Leeds Bradford Airport', BHX: 'Birmingham Airport', NCL: 'Newcastle Airport'
+};
+
+const FYLDE_LOCATIONS = [
+    'Blackpool, FY1','Blackpool, FY2','Blackpool, FY3','Blackpool, FY4',
+    'Bispham, Blackpool','Cleveleys, FY5','Fleetwood, FY7',
+    'Poulton-le-Fylde, FY6','Thornton-Cleveleys','Lytham St Annes, FY8',
+    'Lytham, FY8','St Annes-on-Sea, FY8','Kirkham, PR4',
+    'Freckleton, PR4','Warton, PR4','Longridge, PR3',
+    'Preston, PR1','Preston, PR2','Bamber Bridge, PR5',
+    'Leyland, PR25','Chorley, PR6','Garstang, PR3',
+    'Lancaster, LA1','Morecambe, LA4','Clitheroe, BB7'
+];
+
+// ── STATE ────────────────────────────────────────────────────
+let state = { tripType: 'oneway', airport: 'MAN', passengers: 2, currentStep: 1 };
+let stripe, cardElement, clientSecret, paymentIntentId;
+
+// ── INIT ─────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+    // Init Stripe
+    stripe = Stripe(STRIPE_PK);
+
+    // Set tomorrow's date
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    document.getElementById('travel-date').value = tomorrow.toISOString().split('T')[0];
+    document.getElementById('travel-date').min = new Date().toISOString().split('T')[0];
+    document.getElementById('travel-time').value = '06:00';
+});
+
+// ── STRIPE ELEMENTS ──────────────────────────────────────────
+function mountStripeCard() {
+    const elements = stripe.elements({
+        fonts: [{ cssSrc: 'https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&display=swap' }]
+    });
+
+    cardElement = elements.create('card', {
+        style: {
+            base: {
+                fontFamily: '"DM Sans", sans-serif',
+                fontSize: '15px',
+                color: '#1a1a2e',
+                '::placeholder': { color: '#aab5c2' },
+                iconColor: '#C9A84C'
+            },
+            invalid: { color: '#C0392B', iconColor: '#C0392B' }
+        },
+        hidePostalCode: true
+    });
+
+    cardElement.mount('#card-element');
+
+    cardElement.on('focus', () => document.getElementById('card-element').classList.add('focused'));
+    cardElement.on('blur',  () => document.getElementById('card-element').classList.remove('focused'));
+    cardElement.on('change', (e) => {
+        const errEl = document.getElementById('stripe-error');
+        if (e.error) { errEl.textContent = e.error.message; errEl.classList.add('visible'); }
+        else          { errEl.classList.remove('visible'); }
+    });
+}
+
+// ── TRIP TYPE ────────────────────────────────────────────────
+function setTripType(type) {
+    state.tripType = type;
+    document.getElementById('btn-oneway').classList.toggle('active', type === 'oneway');
+    document.getElementById('btn-return').classList.toggle('active', type === 'return');
+    document.getElementById('return-date-section').style.display = type === 'return' ? 'block' : 'none';
+    updatePriceTable();
+}
+
+// ── AIRPORT ──────────────────────────────────────────────────
+function selectAirport(code) {
+    state.airport = code;
+    document.querySelectorAll('.airport-card').forEach(c => c.classList.remove('selected'));
+    const codes = ['MAN','LPL','LBA','BHX','NCL'];
+    document.querySelectorAll('.airport-card')[codes.indexOf(code)].classList.add('selected');
+    updatePriceTable();
+}
+
+function updatePriceTable() {
+    document.querySelectorAll('#step-1 tbody tr').forEach(r => r.classList.remove('highlighted'));
+    const row = document.getElementById('row-' + state.airport);
+    if (row) row.classList.add('highlighted');
+}
+
+// ── PASSENGERS ───────────────────────────────────────────────
+function changePax(delta) {
+    state.passengers = Math.max(1, Math.min(4, state.passengers + delta));
+    document.getElementById('pax-count').textContent = state.passengers;
+}
+
+// ── AUTOCOMPLETE ─────────────────────────────────────────────
+function handlePickupInput(val) {
+    const list = document.getElementById('pickup-suggestions');
+    if (!val || val.length < 2) { list.classList.remove('open'); return; }
+    const matches = FYLDE_LOCATIONS.filter(l => l.toLowerCase().includes(val.toLowerCase())).slice(0, 6);
+    if (!matches.length) { list.classList.remove('open'); return; }
+    list.innerHTML = matches.map(m => `<div class="autocomplete-item" onmousedown="pickLocation('${m}')">📍 ${m}</div>`).join('');
+    list.classList.add('open');
+}
+
+function pickLocation(loc) {
+    document.getElementById('pickup').value = loc;
+    closeAutocomplete();
+}
+
+function closeAutocomplete() {
+    document.getElementById('pickup-suggestions').classList.remove('open');
+}
+
+// ── PRICE ────────────────────────────────────────────────────
+function getPrice() { return PRICES[state.airport][state.tripType]; }
+
+// ── VALIDATION ───────────────────────────────────────────────
+function validateStep(step) {
+    let valid = true;
+    const setErr = (id, show) => { const el = document.getElementById(id); if (el) el.classList.toggle('visible', show); };
+    const setInputErr = (id, show) => { const el = document.getElementById(id); if (el) el.classList.toggle('error', show); };
+
+    if (step === 1) {
+        const pickup = document.getElementById('pickup').value.trim();
+        const date   = document.getElementById('travel-date').value;
+        const time   = document.getElementById('travel-time').value;
+        if (!pickup) { setErr('err-pickup', true); setInputErr('pickup', true); valid = false; } else { setErr('err-pickup', false); setInputErr('pickup', false); }
+        if (!date)   { setErr('err-date', true);   setInputErr('travel-date', true); valid = false; } else { setErr('err-date', false);   setInputErr('travel-date', false); }
+        if (!time)   { setErr('err-time', true);   setInputErr('travel-time', true); valid = false; } else { setErr('err-time', false);   setInputErr('travel-time', false); }
+    }
+    if (step === 2) {
+        const fname = document.getElementById('first-name').value.trim();
+        const lname = document.getElementById('last-name').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const phone = document.getElementById('phone').value.trim();
+        const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!fname)              { setErr('err-firstname', true); setInputErr('first-name', true); valid = false; } else { setErr('err-firstname', false); setInputErr('first-name', false); }
+        if (!lname)              { setErr('err-lastname', true);  setInputErr('last-name', true);  valid = false; } else { setErr('err-lastname', false);  setInputErr('last-name', false); }
+        if (!emailRe.test(email)){ setErr('err-email', true);     setInputErr('email', true);      valid = false; } else { setErr('err-email', false);     setInputErr('email', false); }
+        if (!phone)              { setErr('err-phone', true);     setInputErr('phone', true);      valid = false; } else { setErr('err-phone', false);     setInputErr('phone', false); }
+    }
+    if (!valid) showToast('Please fix the errors', 'Some required fields need attention.', 'error');
+    return valid;
+}
+
+// ── STEP NAV ─────────────────────────────────────────────────
+function goToStep(n) {
+    if (n > state.currentStep && !validateStep(state.currentStep)) return;
+    state.currentStep = n;
+    document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('step-' + n).classList.add('active');
+    for (let i = 1; i <= 4; i++) {
+        const nav = document.getElementById('step-nav-' + i);
+        nav.classList.remove('active','completed');
+        if (i < n) nav.classList.add('completed');
+        if (i === n) nav.classList.add('active');
+    }
+    if (n === 3) buildSummary();
+    if (n === 4) { buildPaymentSummary(); mountStripeCard(); createPaymentIntent(); }
+    document.getElementById('booking').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setTimeout(() => window.scrollBy(0, -80), 400);
+}
+
+// ── BUILD SUMMARY ────────────────────────────────────────────
+function buildSummary() {
+    const price = getPrice();
+    const pickup = document.getElementById('pickup').value;
+    const date   = document.getElementById('travel-date').value;
+    const time   = document.getElementById('travel-time').value;
+    const fname  = document.getElementById('first-name').value;
+    const lname  = document.getElementById('last-name').value;
+    const email  = document.getElementById('email').value;
+    const flight = document.getElementById('flight-number').value || '—';
+    const bags   = document.getElementById('checked-bags').value;
+    const hand   = document.getElementById('hand-bags').value;
+    const dateFmt = date ? new Date(date+'T12:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'long',year:'numeric'}) : '—';
+
+    let extras = [];
+    if (document.getElementById('extra-childseat').checked)    extras.push('Child seat');
+    if (document.getElementById('extra-boosterseat').checked)  extras.push('Booster seat');
+    if (document.getElementById('extra-wifi').checked)         extras.push('WiFi');
+    if (document.getElementById('extra-refreshments').checked) extras.push('Refreshments');
+
+    let returnHTML = '';
+    if (state.tripType === 'return') {
+        const rd = document.getElementById('return-date').value;
+        const rt = document.getElementById('return-time').value;
+        const rf = document.getElementById('return-flight').value;
+        const rdFmt = rd ? new Date(rd+'T12:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'long'}) : '—';
+        returnHTML = `<div class="summary-row"><span class="summary-label">Return</span><span class="summary-val">${rdFmt} at ${rt||'—'} ${rf?'· '+rf:''}</span></div>`;
+    }
+
+    document.getElementById('booking-summary').innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.2rem;flex-wrap:wrap;gap:0.5rem;">
+            <div><div style="font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-weight:700;color:white;">${fname} ${lname}</div><div style="font-size:0.82rem;color:rgba(255,255,255,0.5);margin-top:0.15rem;">${email}</div></div>
+            <div style="background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.35);color:var(--gold-light);padding:0.3rem 0.9rem;border-radius:100px;font-size:0.8rem;font-weight:600;text-transform:uppercase;">${state.tripType==='return'?'Return':'One Way'}</div>
+        </div>
+        <div class="summary-row"><span class="summary-label">Pickup</span><span class="summary-val">${pickup}</span></div>
+        <div class="summary-row"><span class="summary-label">Airport</span><span class="summary-val">${AIRPORT_NAMES[state.airport]}</span></div>
+        <div class="summary-row"><span class="summary-label">Date & Time</span><span class="summary-val">${dateFmt} · ${time}</span></div>
+        ${returnHTML}
+        <div class="summary-row"><span class="summary-label">Passengers</span><span class="summary-val">${state.passengers}</span></div>
+        <div class="summary-row"><span class="summary-label">Luggage</span><span class="summary-val">${bags} checked · ${hand} hand</span></div>
+        <div class="summary-row"><span class="summary-label">Flight</span><span class="summary-val">${flight}</span></div>
+        ${extras.length?`<div class="summary-row"><span class="summary-label">Extras</span><span class="summary-val">${extras.join(' · ')}</span></div>`:''}
+        <div class="summary-total-row"><span class="summary-total-label">Total (fixed price)</span><span class="summary-total-price">£${price}</span></div>
+        <div class="features-list"><span class="feature-tag">⚡ Tesla Model Y</span><span class="feature-tag">✈️ Flight tracking</span><span class="feature-tag">🔒 Fixed price</span><span class="feature-tag">↩️ Free cancellation</span></div>
+    `;
+}
+
+function buildPaymentSummary() {
+    const price = getPrice();
+    const pickup = document.getElementById('pickup').value;
+    const date   = document.getElementById('travel-date').value;
+    const dateFmt = date ? new Date(date+'T12:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'}) : '';
+    document.getElementById('payment-mini-summary').innerHTML = `
+        <div><div style="font-size:0.9rem;font-weight:600;color:var(--navy);">${pickup} → ${AIRPORT_NAMES[state.airport]}</div><div style="font-size:0.82rem;color:var(--muted);">${dateFmt} · ${state.passengers} pax · ${state.tripType==='return'?'Return':'One Way'}</div></div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:1.8rem;font-weight:700;color:var(--gold);">£${price}</div>`;
+    document.getElementById('pay-amount').textContent = '£' + price;
+}
+
+// ── CREATE PAYMENT INTENT ────────────────────────────────────
+async function createPaymentIntent() {
+    try {
+        const booking = collectBookingData();
+        const res = await fetch(`${API_BASE}/api/create-payment-intent`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                amount: getPrice() * 100, // pence
+                currency: 'gbp',
+                booking
+            })
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        clientSecret    = data.clientSecret;
+        paymentIntentId = data.paymentIntentId;
+    } catch (err) {
+        console.error('PaymentIntent creation failed:', err);
+        showToast('Connection error', 'Could not connect to payment server. Please try again.', 'error');
+    }
+}
+
+// ── COLLECT BOOKING DATA ──────────────────────────────────────
+function collectBookingData() {
+    let extras = [];
+    if (document.getElementById('extra-childseat').checked)    extras.push('Child seat');
+    if (document.getElementById('extra-boosterseat').checked)  extras.push('Booster seat');
+    if (document.getElementById('extra-wifi').checked)         extras.push('WiFi');
+    if (document.getElementById('extra-refreshments').checked) extras.push('Refreshments');
+
+    return {
+        ref:            'EVX-' + Math.floor(100000 + Math.random() * 900000),
+        tripType:       state.tripType,
+        airport:        state.airport,
+        passengers:     state.passengers,
+        pickup:         document.getElementById('pickup').value,
+        date:           document.getElementById('travel-date').value,
+        time:           document.getElementById('travel-time').value,
+        returnDate:     document.getElementById('return-date').value,
+        returnTime:     document.getElementById('return-time').value,
+        returnFlight:   document.getElementById('return-flight').value,
+        firstName:      document.getElementById('first-name').value,
+        lastName:       document.getElementById('last-name').value,
+        email:          document.getElementById('email').value,
+        phone:          document.getElementById('phone').value,
+        flight:         document.getElementById('flight-number').value,
+        checkedBags:    document.getElementById('checked-bags').value,
+        handBags:       document.getElementById('hand-bags').value,
+        extras,
+        specialRequests: document.getElementById('special-requests').value,
+        driverNotes:    document.getElementById('driver-notes').value,
+        price:          getPrice()
+    };
+}
+
+// ── PROCESS PAYMENT ──────────────────────────────────────────
+async function processPayment() {
+    const cardholderName = document.getElementById('cardholder-name').value.trim();
+    if (!cardholderName) {
+        document.getElementById('err-cardname').classList.add('visible');
+        return;
+    }
+    document.getElementById('err-cardname').classList.remove('visible');
+
+    if (!clientSecret) {
+        showToast('Error', 'Payment session expired. Please go back and try again.', 'error');
+        return;
+    }
+
+    const btn = document.getElementById('pay-btn');
+    btn.disabled = true;
+    document.getElementById('pay-btn-text').innerHTML = '<span class="spinner"></span> Processing...';
+
+    try {
+        const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+            payment_method: {
+                card: cardElement,
+                billing_details: { name: cardholderName }
+            }
+        });
+
+        if (error) {
+            const errEl = document.getElementById('stripe-error');
+            errEl.textContent = error.message;
+            errEl.classList.add('visible');
+            btn.disabled = false;
+            document.getElementById('pay-btn-text').innerHTML = 'Pay Now · <span id="pay-amount">£' + getPrice() + '</span>';
+            showToast('Payment failed', error.message, 'error');
+            return;
+        }
+
+        if (paymentIntent.status === 'succeeded') {
+            // Confirm booking & send emails
+            const booking = collectBookingData();
+            const res = await fetch(`${API_BASE}/api/confirm-booking`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ paymentIntentId: paymentIntent.id, booking })
+            });
+            const data = await res.json();
+            showConfirmation(data.ref || booking.ref, booking);
+        }
+
+    } catch (err) {
+        btn.disabled = false;
+        document.getElementById('pay-btn-text').innerHTML = 'Pay Now · <span id="pay-amount">£' + getPrice() + '</span>';
+        showToast('Error', 'Something went wrong. Please try again.', 'error');
+    }
+}
+
+// ── SHOW CONFIRMATION ────────────────────────────────────────
+function showConfirmation(ref, booking) {
+    document.getElementById('conf-ref-code').textContent = ref;
+    const dateFmt = booking.date ? new Date(booking.date+'T12:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'long',year:'numeric'}) : '';
+
+    document.getElementById('conf-details').innerHTML = `
+        <div class="summary-row"><span class="summary-label">Passenger</span><span class="summary-val" style="color:white;">${booking.firstName} ${booking.lastName}</span></div>
+        <div class="summary-row"><span class="summary-label">Email</span><span class="summary-val" style="color:white;">${booking.email}</span></div>
+        <div class="summary-row"><span class="summary-label">Journey</span><span class="summary-val" style="color:white;">${booking.pickup} → ${AIRPORT_NAMES[booking.airport]}</span></div>
+        <div class="summary-row"><span class="summary-label">Date</span><span class="summary-val" style="color:white;">${dateFmt} at ${booking.time}</span></div>
+        <div class="summary-row"><span class="summary-label">Passengers</span><span class="summary-val" style="color:white;">${booking.passengers}</span></div>
+        <div class="summary-row"><span class="summary-label">Amount Paid</span><span class="summary-val" style="color:var(--gold-light);">£${booking.price}</span></div>
+    `;
+
+    document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('step-progress').style.opacity = '0.4';
+    document.getElementById('confirmation').classList.add('visible');
+    document.getElementById('booking').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    showToast('Booking Confirmed! 🎉', `Ref: ${ref} · Check your inbox!`, 'success');
+}
+
+// ── DOWNLOAD ─────────────────────────────────────────────────
+function downloadConfirmation() {
+    const ref   = document.getElementById('conf-ref-code').textContent;
+    const price = getPrice();
+    const pickup = document.getElementById('pickup').value;
+    const fname  = document.getElementById('first-name').value;
+    const lname  = document.getElementById('last-name').value;
+    const email  = document.getElementById('email').value;
+    const date   = document.getElementById('travel-date').value;
+    const time   = document.getElementById('travel-time').value;
+
+    const content = `EV EXEC - BOOKING CONFIRMATION
+================================
+Reference: ${ref}
+Passenger: ${fname} ${lname}
+Email: ${email}
+Journey: ${pickup} → ${AIRPORT_NAMES[state.airport]}
+Date: ${date} at ${time}
+Passengers: ${state.passengers}
+Trip type: ${state.tripType}
+Total Paid: £${price}
+================================
+Vehicle: Tesla Model Y
+Includes: Flight tracking, WiFi, Charging
+Free cancellation up to 24 hours before travel.
+
+Contact: book@evexec.co.uk | www.evexec.co.uk
+© 2026 EV Exec. All rights reserved.`;
+
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([content], { type: 'text/plain' }));
+    a.download = `EV-Exec-${ref}.txt`;
+    a.click();
+}
+
+// ── RESET ─────────────────────────────────────────────────────
+function resetBooking() {
+    state = { tripType: 'oneway', airport: 'MAN', passengers: 2, currentStep: 1 };
+    clientSecret = null; paymentIntentId = null;
+    document.getElementById('confirmation').classList.remove('visible');
+    document.getElementById('step-progress').style.opacity = '1';
+    ['pickup','first-name','last-name','email','phone','flight-number','special-requests','driver-notes','return-flight'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+    document.getElementById('pax-count').textContent = '2';
+    setTripType('oneway'); selectAirport('MAN');
+    const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate()+1);
+    document.getElementById('travel-date').value = tomorrow.toISOString().split('T')[0];
+    document.getElementById('travel-time').value = '06:00';
+    goToStep(1);
+}
+
+// ── TOAST ─────────────────────────────────────────────────────
+function showToast(title, msg, type='success') {
+    const toast = document.getElementById('toast');
+    document.getElementById('toast-title').textContent = title;
+    document.getElementById('toast-msg').textContent = msg;
+    toast.style.borderLeftColor = type==='error' ? 'var(--error)' : 'var(--gold)';
+    toast.classList.add('visible');
+    setTimeout(() => toast.classList.remove('visible'), 4500);
+}
+</script>
+</body>
+</html>
